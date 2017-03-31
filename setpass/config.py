@@ -45,7 +45,31 @@ default_opts = [
 
     cfg.IntOpt('max_attempts',
                default=3,
-               help='Max number of pin attempts before lockout.')
+               help='Max number of pin attempts before lockout.'),
+
+    cfg.StrOpt('helpdesk_email',
+               default='root@localhost',
+               help='Destination email for password reset notification.'),
+
+    cfg.StrOpt('ticket_sender',
+               default='root@localhost',
+               help='Source email for password reset notification.'),
+
+    cfg.StrOpt('ticket_subject',
+               default='New Ticket',
+               help='Email address for password reset notification.'),
+
+    cfg.HostAddressOpt('mail_ip',
+                       default='127.0.0.1',
+                       help='IP address of the mail server.'),
+
+    cfg.PortOpt('mail_port',
+                default=25,
+                help='Port of the mail server.'),
+
+    cfg.StrOpt('helpdesk_template',
+               default='setpass/files/helpdesk_ticket.txt',
+               help='Template file for helpdesk ticket emails')
 ]
 
 CONF.register_opts(default_opts)

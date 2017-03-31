@@ -14,8 +14,10 @@
 
 import datetime
 import json
+import smtplib
 import uuid
 
+from email.mime.text import MIMEText
 from flask import Response
 from flask import request, render_template
 from keystoneauth1.identity import v3
@@ -123,7 +125,7 @@ def _set_password(token, pin, password):
         raise exception.WrongPinException
 
     delta = datetime.datetime.utcnow() - user.updated_at
-    if delta.total_seconds() > CONF['token_expiration']:
+    if delta.total_seconds() > CONF.token_expiration:
         raise exception.TokenExpiredException
 
     _set_openstack_password(user.user_id, user.password, password)
@@ -164,6 +166,45 @@ def add(user_id):
 
     model.db.session.commit()
     return Response(response=user.token, status=200)
+
+
+@wsgi.app.route('/reset', methods=['GET'])
+def view_reset_form():
+    return render_template('reset_form.html')
+
+
+@wsgi.app.route('/reset', methods=['POST'])
+def reset_password():
+    name = request.form['name']
+    username = request.form['username']
+    pin = request.form['pin']
+
+    if not name or not username or not pin:
+        return Response(response='Missing name/pin/username!', status=400)
+
+    _notify_helpdesk(name=name, username=username, pin=pin)
+
+    return Response(response='The request has been forwarded to the helpdesk.',
+                    status=200)
+
+
+def _notify_helpdesk(**kwargs):
+    with open(CONF.helpdesk_template, 'r') as f:
+        msg_body = f.read()
+    msg_body = msg_body.format(**kwargs)
+
+    sender = CONF.ticket_sender
+    recipient = CONF.helpdesk_email
+    msg = MIMEText(msg_body)
+    msg['Subject'] = CONF.ticket_subject
+    msg['From'] = sender
+    msg['To'] = recipient
+
+    server = smtplib.SMTP(CONF.mail_ip, CONF.mail_port)
+    server.ehlo()
+    server.starttls()
+
+    server.sendmail(sender, recipient, msg.as_string())
 
 
 if __name__ == '__main__':

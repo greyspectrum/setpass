@@ -1,0 +1,7 @@
+[{username}]
+CSR Type: [Password Reset]
+Priority: [High]
+
+User's Full Name: {name}
+OpenStack username: {username}
+PIN: {pin}
