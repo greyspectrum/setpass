@@ -47,10 +47,14 @@ def view_form():
 def set_password():
     token = request.args.get('token')
     password = request.form['password']
+    confirm_password = request.form['confirm_password']
     pin = request.form['pin']
 
-    if not token or not password or not pin:
-        return Response(response='Missing token/pin/password!', status=400)
+    if not token or not password or not confirm_password or not pin:
+        return Response(response='Missing required field!', status=400)
+
+    if password != confirm_password:
+        return Response(response='Passwords do not match', status=400)
 
     try:
         _set_password(token, pin, password)
@@ -176,13 +180,17 @@ def view_reset_form():
 @wsgi.app.route('/reset', methods=['POST'])
 def reset_password():
     name = request.form['name']
-    username = request.form['username']
+    email = request.form['email']
+    confirm_email = request.form['confirm_email']
     pin = request.form['pin']
 
-    if not name or not username or not pin:
-        return Response(response='Missing name/pin/username!', status=400)
+    if not name or not email or not confirm_email or not pin:
+        return Response(response='Missing required field!', status=400)
 
-    _notify_helpdesk(name=name, username=username, pin=pin)
+    if email != confirm_email:
+        return Response(response="Email addresses do not match.", status=400)
+
+    _notify_helpdesk(name=name, username=email, pin=pin)
 
     return Response(response='The request has been forwarded to the helpdesk.',
                     status=200)

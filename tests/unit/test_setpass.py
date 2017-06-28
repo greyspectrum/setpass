@@ -184,7 +184,9 @@ class TestSetpass(object):
         token = user.token
         pin = user.pin  # Save the pin to reuse it after row deletion
         r = app.post('/?token=%s' % token,
-                     data={'password': 'NEW_PASS', 'pin': pin})
+                     data={'password': 'NEW_PASS',
+                           'confirm_password': 'NEW_PASS',
+                           'pin': pin})
         assert r.status_code == 200
 
         # Ensure user record is deleted
@@ -193,20 +195,26 @@ class TestSetpass(object):
 
         # Ensure we get a 404 when reusing the token
         r = app.post('/?token=%s' % token,
-                     data={'password': 'NEW_NEW_PASS', 'pin': pin})
+                     data={'password': 'NEW_NEW_PASS',
+                           'confirm_password': 'NEW_NEW_PASS',
+                           'pin': pin})
         assert r.status_code == 404
 
     def test_set_pass_expired(self, app, user):
         # Set time to after token expiration
         with freezegun.freeze_time(self._get_expired_time(user.updated_at)):
             r = app.post('/?token=%s' % user.token,
-                         data={'password': 'NEW_PASS', 'pin': user.pin})
+                         data={'password': 'NEW_PASS',
+                               'confirm_password': 'NEW_PASS',
+                               'pin': user.pin})
 
         assert r.status_code == 403
 
     def test_wrong_token(self, app, user):
         r = app.post('/?token=%s' % 'WRONG_TOKEN',
-                     data={'password': 'NEW_PASS', 'pin': user.pin})
+                     data={'password': 'NEW_PASS',
+                           'confirm_password': 'NEW_PASS',
+                           'pin': user.pin})
         assert r.status_code == 404
 
     def test_wrong_pin(self, app, user):
@@ -214,7 +222,9 @@ class TestSetpass(object):
         assert pin != user.pin
 
         r = app.post('/?token=%s' % user.token,
-                     data={'password': 'NEW_PASS', 'pin': pin})
+                     data={'password': 'NEW_PASS',
+                           'confirm_password': 'NEW_PASS',
+                           'pin': pin})
         assert r.status_code == 403
 
     def test_lockout(self, app, user):
@@ -228,7 +238,9 @@ class TestSetpass(object):
         model.db.session.commit()
 
         app.post('/?token=%s' % user.token,
-                 data={'password': 'NEW_PASS', 'pin': pin})
+                 data={'password': 'NEW_PASS',
+                       'confirm_password': 'NEW_PASS',
+                       'pin': pin})
 
         user = model.User.find(token=token)
         assert user is not None
@@ -236,15 +248,26 @@ class TestSetpass(object):
 
         # Provide the correct pin, but we went beyond max attempts
         r = app.post('/?token=%s' % user.token,
-                     data={'password': 'NEW_PASS', 'pin': user.pin})
+                     data={'password': 'NEW_PASS',
+                           'confirm_password': 'NEW_PASS',
+                           'pin': user.pin})
         assert r.status_code == 403
 
     def test_invalid_pin(self, app, user):
         pin = 'fooo'
 
         r = app.post('/?token=%s' % user.token,
-                     data={'password': 'NEW_PASS', 'pin': pin})
+                     data={'password': 'NEW_PASS',
+                           'confirm_password': 'NEW_PASS',
+                           'pin': pin})
         assert r.status_code == 403
+
+    def test_no_match(self, app, user):
+        r = app.post('/?token=%s' % user.token,
+                     data={'password': 'NEW_PASS',
+                           'confirm_password': 'NOT_A_MATCH',
+                           'pin': user.pin})
+        assert r.status_code == 400
 
     def test_no_arguments(self, app):
         # Token but no password

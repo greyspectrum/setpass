@@ -9,6 +9,11 @@ setup(
     author='Kristi Nikolla',
     author_email='knikolla@bu.edu',
     url='https://github.com/knikolla/setpass',
-    packages=['setpass', 'setpass.templates'],
-    package_data={'setpass.templates': ['*']}
+    packages=['setpass',
+              'setpass.templates',
+              'setpass.files',
+              'setpass.static'],
+    package_data={'setpass.templates': ['*'],
+                  'setpass.files': ['*'],
+                  'setpass.static': ['*']}
 )
